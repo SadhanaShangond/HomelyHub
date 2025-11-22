@@ -1,0 +1,89 @@
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { propertyActions } from "../../store/Property/property-slice";
+import { getAllProperties } from "../../store/Property/property-actions";
+// import { getAllPropertys } from "../../Store/Property/property-action";
+// import "../../CSS/Home.css";
+
+const Card = ({ image, name, address, price, id }) => {
+  return (
+    <figure className="property">
+      <Link to={`/propertylist/${id}`}>
+        <img src={image} alt="Propertyimg" />
+      </Link>
+      <h4>{name}</h4>
+      <figcaption>
+        <main className="propertydetails">
+          <h5>{name}</h5>
+
+          <h6>
+            <span className="material-symbols-outlined houseicon">home_pin</span>
+            {address}
+          </h6>
+          <p>
+            <span className="price"> ₹{price}</span> per night
+          </p>
+        </main>
+      </figcaption>
+    </figure>
+  );
+};
+
+const PropertyList = () => {
+  const [currentPage, setCurrentPage] = useState({ page: 1 });
+  const dispatch = useDispatch();
+  const { properties, totalProperties } = useSelector(state => state.properties);
+
+  const lastPage = Math.ceil(totalProperties / 12);
+
+  useEffect(() => {
+    const fetchProperties = async (page) => {
+      dispatch(propertyActions.updateSearchParams(page));
+      dispatch(getAllProperties());
+    };
+    fetchProperties(currentPage);
+  }, [dispatch, currentPage]);
+
+  // console.log(typeof properties);
+
+
+  return (
+    <>
+      {properties.length === 0
+        ? (<p className="not_found">Property Not Found</p>)
+        : (
+          <div className="propertylist">
+            {properties.map((property) => (
+              <Card
+                key={property._id}
+                image={property.images[0].url}
+                name={property.propertyName}
+                address={`${property.address.city}, ${property.address.state}, ${property.address.pincode}`}
+                price={property.price}
+                id={property._id}
+              />
+            ))}
+          </div>
+        )
+      }
+      <div className="pagination">
+        <button
+          onClick={() => setCurrentPage(prev => ({ page: prev.page - 1 }))}
+          disabled={currentPage.page === 1}
+        >
+          <span className="material-symbols-outlined">arrow_back_ios_new</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentPage(prev => ({ page: prev.page + 1 }))}
+          disabled={properties.length < 12 || currentPage.page === lastPage}
+        >
+          <span className="material-symbols-outlined">arrow_forward_ios</span>
+        </button>
+      </div>
+    </>
+  );
+};
+
+export default PropertyList;
