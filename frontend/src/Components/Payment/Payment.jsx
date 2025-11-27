@@ -1,17 +1,22 @@
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate, useParams } from 'react-router-dom';
-import { selectPaymentDetails, selectPaymentStatus } from '../../store/Payment/payment-slice';
-import toast from 'react-hot-toast';
-import { initiateCheckoutSession, verifyPayment } from '../../store/Payment/payment-actions';
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  selectPaymentDetails,
+  selectPaymentStatus,
+} from "../../store/Payment/payment-slice";
+import toast from "react-hot-toast";
+import {
+  initiateCheckoutSession,
+  verifyPayment,
+} from "../../store/Payment/payment-actions";
 // import { theme } from 'antd';
 
 const Payment = () => {
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { propertyId } = useParams();
-  const { user } = useSelector(state => state.user);
+  const { user } = useSelector((state) => state.user);
   const {
     checkInDate,
     checkOutDate,
@@ -30,8 +35,8 @@ const Payment = () => {
       script.onload = () => resolve(true);
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
-    })
-  }
+    });
+  };
 
   const handleBooking = async () => {
     const isLoaded = await loadRazorPayScript();
@@ -39,14 +44,16 @@ const Payment = () => {
       toast.error("Failed to loadRazorpay SDK");
       return;
     }
-    dispatch(initiateCheckoutSession({
-      amount: totalPrice,
-      currency: "INR",
-      propertyId,
-      fromDate: checkInDate,
-      toDate: checkOutDate,
-      guests: guests,
-    }));
+    dispatch(
+      initiateCheckoutSession({
+        amount: totalPrice,
+        currency: "INR",
+        propertyId,
+        fromDate: checkInDate,
+        toDate: checkOutDate,
+        guests: guests,
+      })
+    );
   };
 
   useEffect(() => {
@@ -61,20 +68,22 @@ const Payment = () => {
       order_id: orderData.orderId,
       handler: async (response) => {
         try {
-          await dispatch(verifyPayment({
-            razorpayData: {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            },
-            bookingDetails: {
-              propertyId,
-              fromDate: checkInDate,
-              toDate: checkOutDate,
-              guests: guests,
-              totalAmount: totalPrice,
-            },
-          }));
+          await dispatch(
+            verifyPayment({
+              razorpayData: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              bookingDetails: {
+                propertyId,
+                fromDate: checkInDate,
+                toDate: checkOutDate,
+                guests: guests,
+                totalAmount: totalPrice,
+              },
+            })
+          );
 
           toast.success("Booking Confirmed 😀. Redirecting...");
           navigate("/user/bookings");
@@ -97,7 +106,7 @@ const Payment = () => {
       },
       modal: {
         ondismiss: () => {
-          toast.error("Payment Cancelled")
+          toast.error("Payment Cancelled");
         },
       },
     };
@@ -109,7 +118,7 @@ const Payment = () => {
   console.log("ORDER DATA FROM BACKEND:", orderData);
 
   return (
-    <div className='booking-container'>
+    <div className="booking-container">
       <div className="property-details">
         <h2>{propertyName}</h2>
         <p>{totalPrice}</p>
@@ -136,21 +145,17 @@ const Payment = () => {
           <p>Number of Nights: {nights}</p>
         </div>
 
-        {error && (
-          <div className='error-meassage'>
-            {error}
-          </div>
-        )}
+        {error && <div className="error-meassage">{error}</div>}
         <button
           onClick={handleBooking}
           disabled={loading}
-          className='book-now-btn'
+          className="book-now-btn"
         >
           {loading ? "Processing..." : `Book Now ₹${totalPrice}`}
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Payment
+export default Payment;

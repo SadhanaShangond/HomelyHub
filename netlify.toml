@@ -1,4 +1,0 @@
-[build]
-  base = "frontend"
-  publish = "build"
-  command = "CI=false npm install --legacy-peer-deps && CI=false npm run build"

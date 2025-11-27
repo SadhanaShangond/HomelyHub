@@ -1,7 +1,7 @@
 import Razorpay from "razorpay";
-import {Property} from "../models/propertyModel.js";
+import { Property } from "../models/propertyModel.js";
 import crypto from "crypto";
-import {Booking} from "../models/bookingModel.js"
+import { Booking } from "../models/bookingModel.js";
 import moment from "moment";
 
 const razorpay = new Razorpay({
@@ -11,6 +11,8 @@ const razorpay = new Razorpay({
 
 // Step-1: Create a Razorpay order (before booking creation)
 const getCheckoutSession = async (req, res) => {
+  console.log(process.env.RAZORPAY_SECRET);
+  console.log(process.env.RAZORPAY_KEY_ID);
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -67,6 +69,7 @@ const getCheckoutSession = async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
+    console.log("orders", order);
 
     res.status(200).json({
       success: true,
@@ -86,109 +89,111 @@ const getCheckoutSession = async (req, res) => {
   }
 };
 
-
 //Step:2 Verify payment and Create booking
 
-const verifyPaymentAndCreateBooking = async (req,res) => {
+const verifyPaymentAndCreateBooking = async (req, res) => {
   try {
-    const {razorpayData,bookingDetails} = req.body;
-    const {razorpay_order_id,razorpay_payment_id,razorpay_signature}=razorpayData;
+    const { razorpayData, bookingDetails } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      razorpayData;
 
     //verify payment signature
-    const body = razorpay_order_id + "|"+razorpay_payment_id;
-    const expectedSignature = crypto.createHmac("sha256",process.env.RAZORPAY_SECRET).update(body.toString()).digest("hex");
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET)
+      .update(body.toString())
+      .digest("hex");
 
-    if(expectedSignature !== razorpay_signature){
+    if (expectedSignature !== razorpay_signature) {
       return res.status(400).json({
-        status:"fail",
-        message:"Payment Verification failed",
-      })
+        status: "fail",
+        message: "Payment Verification failed",
+      });
     }
 
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
-    if(payment.status !== "captured"){
+    if (payment.status !== "captured") {
       return res.status(400).json({
-        status:"fail",
-        message:"Payment not Completed",
-      })
+        status: "fail",
+        message: "Payment not Completed",
+      });
     }
 
     //Extract booking Details from payment notes or request body
 
-    const {propertyId,fromDate,toDate,guests,totalAmount}=bookingDetails;
+    const { propertyId, fromDate, toDate, guests, totalAmount } =
+      bookingDetails;
 
     const fromDateMoment = moment(fromDate);
     const toDateMoment = moment(toDate);
 
-    const numberOfnights = toDateMoment.diff(fromDateMoment,"days");
+    const numberOfnights = toDateMoment.diff(fromDateMoment, "days");
 
     //Create Bookings with payment details
     const booking = await Booking.create({
-      property:propertyId,
-      price:totalAmount,
+      property: propertyId,
+      price: totalAmount,
       guests,
       fromDate,
       toDate,
       numberOfnights,
-      user:req.user._id,
-      paymentStatus:"completed",
-      razorpayOrderId:razorpay_order_id,
-      razorpayPaymentId:razorpay_payment_id,
-      razorpaySignature:razorpay_signature,
-      paidAt:new Date(),
-    })
+      user: req.user._id,
+      paymentStatus: "completed",
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature,
+      paidAt: new Date(),
+    });
 
     //Push the booking data inside the properties currentbooking
 
-    const updateProperty = await Property.findByIdAndUpdate(propertyId,{
-      $push:{
-        currentBookings:{
-          bookingId:booking._id,
+    const updateProperty = await Property.findByIdAndUpdate(propertyId, {
+      $push: {
+        currentBookings: {
+          bookingId: booking._id,
           fromDate,
           toDate,
-          userId:req.user._id,
-        }
-      }
-      
-    })
-
-    res.status(200).json({
-      status:"success",
-      message:"Booking Creates Successfully",
-      data:{
-        booking,
-        paymentId:razorpay_payment_id,
+          userId: req.user._id,
+        },
       },
     });
 
+    res.status(200).json({
+      status: "success",
+      message: "Booking Creates Successfully",
+      data: {
+        booking,
+        paymentId: razorpay_payment_id,
+      },
+    });
   } catch (error) {
-    console.error("Booking creation error",error);
+    console.error("Booking creation error", error);
     res.status(500).json({
-      status:"fail",
-      message:"Failed to create booking",
-      error:error.message,
-    })
+      status: "fail",
+      message: "Failed to create booking",
+      error: error.message,
+    });
   }
-}
+};
 
 //Bookings of a paticular user
-const getUserBooking = async (req,res) => {
+const getUserBooking = async (req, res) => {
   try {
-    const bookings = await Booking.find({user:req.user._id});
+    const bookings = await Booking.find({ user: req.user._id });
     res.status(200).json({
-      status:"Success",
-      data:{bookings},
-    })
+      status: "Success",
+      data: { bookings },
+    });
   } catch (error) {
     res.status(401).json({
-      status:"fail",
-      message:error.message,
-    })
+      status: "fail",
+      message: error.message,
+    });
   }
-}
+};
 
 //Booking Details by bookingId
-const getBookingDetails = async (req,res) => {
+const getBookingDetails = async (req, res) => {
   try {
     const bookings = await Booking.findById(req.params.bookingId);
     res.status(200).json({
@@ -201,7 +206,7 @@ const getBookingDetails = async (req,res) => {
       message: error.message,
     });
   }
-}
+};
 
 export {
   getCheckoutSession,

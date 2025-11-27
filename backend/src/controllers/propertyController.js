@@ -1,16 +1,17 @@
-import { Property } from "../models/propertyModel.js"
+import { Property } from "../models/propertyModel.js";
 import { APIFeautres } from "../utils/APIFeatures.js";
 import imagekit from "../utils/imagekitio.js";
 
-const getProperties = async (req,res) => {
+const getProperties = async (req, res) => {
   try {
+    console.log("Hello");
+
     console.log(req.query);
-    
-    const features = new APIFeautres(Property.find(),req.query)
+
+    const features = new APIFeautres(Property.find(), req.query)
       .filter()
       .search()
       .pagination();
-    // console.log(features);
     
 
     const allProperties = await Property.find();
@@ -20,15 +21,15 @@ const getProperties = async (req,res) => {
     const doc = await features.query;
 
     console.log(typeof doc);
-    
+
     res.status(200).json({
       status: "Success",
       no_of_responses: doc.length,
       all_Properties: allProperties.length,
-      data: doc
-    })
+      data: doc,
+    });
   } catch (error) {
-    console.error("Error searching properties ", error); 
+    console.error("Error searching properties ", error);
     res.status(500).json({
       status: "Failed",
       error: "Internal server error",
@@ -46,12 +47,12 @@ const getProperty = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       status: "Failed",
-      message: error.message
+      message: error.message,
     });
   }
-}
+};
 
-const createProperty = async (req,res) => {
+const createProperty = async (req, res) => {
   try {
     const {
       propertyName,
@@ -65,20 +66,20 @@ const createProperty = async (req,res) => {
       checkIn,
       checkOut,
       maximumGuest,
-      price,    
+      price,
     } = req.body;
 
     const uploadImages = [];
 
-    for(const image of images){
-      console.log("Images: ",image);
+    for (const image of images) {
+      console.log("Images: ", image);
       const result = await imagekit.upload({
         file: image.url,
         fileName: `property_${Date.now()}.jpg`,
         folder: `property_images`,
       });
 
-      uploadImages.push({url: result.url, public_id: result.fileId});
+      uploadImages.push({ url: result.url, public_id: result.fileId });
     }
 
     const property = await Property.create({
@@ -94,29 +95,29 @@ const createProperty = async (req,res) => {
       checkOut,
       maximumGuest,
       price,
-      userId: req.user._id 
+      userId: req.user._id,
     });
 
     res.status(200).json({
       status: "Success",
       data: {
         data: property,
-      }
-    })
+      },
+    });
   } catch (error) {
-    console.error("Error creating Property",error);
+    console.error("Error creating Property", error);
     res.status(400).json({
       message: "Failed",
-      error: "Internal Server Error"
-    })
+      error: "Internal Server Error",
+    });
   }
-}
+};
 
-const getUserProperty = async (req,res) => {
+const getUserProperty = async (req, res) => {
   try {
     const userId = req.user._id;
-    const property = await Property.find({userId});
-    
+    const property = await Property.find({ userId });
+
     res.status(200).json({
       success: true,
       data: property,
@@ -125,8 +126,8 @@ const getUserProperty = async (req,res) => {
     res.status(404).json({
       success: false,
       message: error.message,
-    })
+    });
   }
-}
+};
 
-export { getProperties, getProperty, createProperty, getUserProperty};
+export { getProperties, getProperty, createProperty, getUserProperty };

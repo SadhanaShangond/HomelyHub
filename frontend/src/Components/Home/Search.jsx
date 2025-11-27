@@ -14,19 +14,6 @@ const Search = () => {
   const dispatch = useDispatch();
   // city:"", dateIn:"", dateOut:"", guests:0
 
-  const updateKeyword = (field, value) => {
-    setKeyword(prevKeyword => ({
-      ...prevKeyword,
-      [field]: value,
-    }));
-  };
-
-  const returnDates = (date, dateString) => {
-    setValue(date[0], date[1]);
-    updateKeyword("dateIn", dateString[0]);
-    updateKeyword("dateOut", dateString[1])
-  }
-
   const searchHandler = (e) => {
     e.preventDefault();
     dispatch(propertyActions.updateSearchParams(keyword));
@@ -36,43 +23,61 @@ const Search = () => {
       city: "",
       dateIn: "",
       dateOut: "",
-      guests: ""
+      guests: "",
     });
     setValue([]);
-  }
+  };
 
+  const updateKeyword = (field, value) => {
+    setKeyword((prevKeyword) => ({
+      ...prevKeyword,
+      [field]: value,
+    }));
+  };
+
+  const returnDates = (date, dateString) => {
+    setValue(date[0], date[1]);
+    updateKeyword("dateIn", dateString[0]);
+    updateKeyword("dateOut", dateString[1]);
+  };
 
   return (
     <>
-      <div className='searchbar'>
+      <div className="searchbar">
         <input
-          className='search'
-          id='search_destination'
-          placeholder='Search destinations'
-          type='text'
+          className="search"
+          id="search_destination"
+          placeholder="Search destinations"
+          type="text"
           value={keyword.city}
           onChange={(e) => updateKeyword("city", e.target.value)}
         />
-        <Space direction='vertical' size={12} className='search'>
+        <Space direction="vertical" size={12} className="search">
           <RangePicker
-            format='DD-MM-YYYY'
-            picker='date'
-            className='date_picker'
+            format="DD-MM-YYYY"
+            picker="date"
+            className="date_picker"
             value={value}
             disabledDate={(current) => {
-              return current.isBefore(Date.now(), "day");
+              return current & current.isBefore(Date.now(), "day");
             }}
             onChange={returnDates}
           />
         </Space>
         <input
-          className='search'
-          id='addguest'
-          placeholder='Add guests'
+          type="number"
+          className="search"
+          id="addguest"
+          placeholder="Add guests"
           value={keyword.guests}
           onChange={(e) => updateKeyword("guests", +e.target.value)}
         />
-        <span className='material-symbols-outlined searchicon' onClick={searchHandler}>search</span>
+        <span
+          className="material-symbols-outlined searchicon"
+          onClick={searchHandler}
+        >
+          search
+        </span>
       </div>
     </>
   );

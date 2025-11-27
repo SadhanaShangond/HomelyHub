@@ -5,8 +5,7 @@ export const getAllProperties = () => async(dispatch, getState) => {
   try {
     dispatch(propertyActions.setRequest());
     const {searchParams} = getState().properties;
-    // console.log(searchParams);
-
+    
     const response = await axiosInstance.get(`/api/v1/rent/listing`,{
       params: {...searchParams},
     });
